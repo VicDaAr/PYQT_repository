@@ -4,9 +4,10 @@
 Created on Thu Feb  6 14:58:20 2020
 @author: daisuke
 """
-import sys
+import sys, os
 from PyQt5 import QtWidgets as QTW
 from PyQt5 import QtCore as QTC
+from PyQt5 import QtGui as QTG
 class FirstWindow(QTW.QMainWindow):
     ''' This is just the first window that uses a widget to show some options'''
     def __init__(self):
@@ -95,11 +96,12 @@ class ParamWidget(QTW.QWidget):
     def init_ui(self):
         self.setWindowTitle('NumericModel')
 
-        self.n_param = 8 #number of params
+        self.n_param = 8 #number of params excluding the 8th
 
         #texts for params
         self.param_lists = [QTW.QTextEdit() for i in range(self.n_param)]
         self.param_lbl_lists = [QTW.QLabel() for i in range(self.n_param)]
+
         #label of params
         self.param_lbl_lists[0] = QTW.QLabel('Nome da simulacao')
         self.param_lbl_lists[1] = QTW.QLabel('Numero de episodios')
@@ -110,17 +112,29 @@ class ParamWidget(QTW.QWidget):
         self.param_lbl_lists[6] = QTW.QLabel('Learning Rate')
         self.param_lbl_lists[7]= QTW.QLabel('Tamanho do batch do experience replay')
 
+        #parameter 8 is a radiobox choice
+        self.param_lbl_lists.append(QTW.QLabel())
+        self.param_lbl_lists[8] = QTW.QLabel('Renderizar simulação durante treinamento?')
+        self.yes_rd_btn = QTW.QRadioButton('sim')
+        self.no_rd_btn = QTW.QRadioButton('nao')
+
         self.confirm_btn = QTW.QPushButton('Confirm')
 
         #values that are already written in the .txt file
         with open('parametros.txt', 'r') as r:
-            param_lines = r.readlines()
+            self.param_lines = r.readlines()
 
         #write
         for i in range (self.n_param):
-            self.param_lists[i].setText(param_lines[i].strip())
+            self.param_lists[i].setText(self.param_lines[i].strip())
 
+        #write for parameter 8
+        if self.param_lines[8].strip() == '1':
+            self.yes_rd_btn.setChecked(True)
+        else:
+            self.no_rd_btn.setChecked(True)
 
+        #Horizontal box
         self.h_box_lists = [QTW.QHBoxLayout() for i in range(self.n_param)]
 
         #adding the labels and texts in horizontal box
@@ -128,9 +142,17 @@ class ParamWidget(QTW.QWidget):
             self.h_box_lists[i].addWidget(self.param_lists[i])
             self.h_box_lists[i].addWidget(self.param_lbl_lists[i])
 
+        #label and radio button for parameter 8
+        self.h_box_lists.append(QTW.QHBoxLayout())
+        self.h_box_lists[8].addWidget(self.yes_rd_btn)
+        self.h_box_lists[8].addWidget(self.no_rd_btn)
+        self.h_box_lists[8].addWidget(self.param_lbl_lists[8])
+
+        #vertical_box
         self.v_box = QTW.QVBoxLayout()
-        for i in range(self.n_param):
+        for i in range(self.n_param): #adding the horizontal boxes
             self.v_box.addLayout(self.h_box_lists[i])
+        self.v_box.addLayout(self.h_box_lists[8])
         self.v_box.addWidget(self.confirm_btn)
 
         #when user clicks the confirm_btn, this two events will be triggered
@@ -142,6 +164,13 @@ class ParamWidget(QTW.QWidget):
     def write_txt(self):
         ''' This method will be called  when the confirm button is pressed, modifying the parameters .txt file'''
         self.txt_name = 'parametros.txt'
+        self.rd_btn_check = None
+
+        #reading the RadioButton
+        if self.yes_rd_btn.isChecked(): #if yes rd btn is selected
+            self.rd_btn_check = '1'
+        else: #if no rd btn is selected
+            self.rd_btn_check = '0'
 
         # cleaning the file
         self.file_clean = open(self.txt_name, "w")
@@ -155,6 +184,7 @@ class ParamWidget(QTW.QWidget):
         with open(self.txt_name, 'a') as a: #a for append
             for i in range(self.n_param):
                 a.write(self.param_txt_lists[i] + '\n')
+            a.write(self.rd_btn_check)
 
     def clear_Layout(self, layout):
         '''You can clear layout with it, but i didn't use'''
@@ -282,15 +312,15 @@ class ImportWidget(QTW.QWidget):
         self.back_btn.clicked.connect(self.b_cge_wdgt_clicked.emit)
 
         #run the .py using Process class
-        self.dosometh = QTW.QPushButton('Press')
-        self.dosometh.clicked.connect(self.do_something)
+        self.start_process = QTW.QPushButton('Start')
+        self.start_process.clicked.connect(self.do_something)
 
         #Where print from .py is going to be printed
         self.prompt_copy = QTW.QTextEdit()
 
         self.v_box = QTW.QVBoxLayout()
         self.v_box.addWidget(self.back_btn)
-        self.v_box.addWidget(self.dosometh)
+        self.v_box.addWidget(self.start_process)
         self.v_box.addWidget(self.prompt_copy)
         self.setLayout(self.v_box)
 
@@ -313,6 +343,7 @@ class Process():
 
         #Signals to trigger events
         self.process.readyRead.connect(lambda: self.stdoutReady()) #triggers when something is flushed to prompt
+
         #self.process.readyReadStandardOutput(lambda: self.stdoutReady())
         #self.process.readyReadStandardError.connect(lambda: self.stderrReady())
 
@@ -320,7 +351,7 @@ class Process():
         self.process.started.connect(lambda: print('Started!'))
         self.process.finished.connect(lambda: print('Finished!'))
 
-        print('Starting process')
+        print('Starting process', flush = true)
         self.process.start('python', ['InvertedPendulum.py']) #starting the process
 
     def append(self, text):
@@ -343,6 +374,18 @@ class Process():
         print('error \n')
         print(text.strip())
         self.qtextedit.append(text)
+
+class Image_plot(QTW.QWidget): #--------------------------------------------------------------------------------
+    def __init__(self, layer_n):
+        super().__init__()
+        self.init_ui()
+
+    def init_ui(self):
+        self.img = qtw.QLabel()
+        #self.img.setPixmap(QtGui.QPixmap('cat.jpeg'))
+
+
+        self.show()  # show layout
 
 #-------------------------------------------------------------------------
 
