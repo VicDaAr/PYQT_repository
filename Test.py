@@ -5,9 +5,12 @@ Created on Thu Feb  6 14:58:20 2020
 @author: daisuke
 """
 import sys, os
+from time import sleep
 from PyQt5 import QtWidgets as QTW
 from PyQt5 import QtCore as QTC
 from PyQt5 import QtGui as QTG
+from threading import Thread
+
 class FirstWindow(QTW.QMainWindow):
     ''' This is just the first window that uses a widget to show some options'''
     def __init__(self):
@@ -35,13 +38,13 @@ class FirstWindowWidget(QTW.QWidget):
         self.real_btn = QTW.QPushButton('Real')
 
         #layout for buttoms -------------------------------------------------
-        self.v_box = QTW.QVBoxLayout()
-        self.v_box.addWidget(self.numeric_model_btn)
+        v_box = QTW.QVBoxLayout()
+        v_box.addWidget(self.numeric_model_btn)
 
         #trigger when the user click numeric_model_btn --------------------------------
         self.numeric_model_btn.clicked.connect(self.numeric_model_open)  #runs the method
 
-        self.setLayout(self.v_box)
+        self.setLayout(v_box)
 
         self.show() #show layout
 
@@ -135,31 +138,31 @@ class ParamWidget(QTW.QWidget):
             self.no_rd_btn.setChecked(True)
 
         #Horizontal box
-        self.h_box_lists = [QTW.QHBoxLayout() for i in range(self.n_param)]
+        h_box_lists = [QTW.QHBoxLayout() for i in range(self.n_param)]
 
         #adding the labels and texts in horizontal box
         for i in range(self.n_param):
-            self.h_box_lists[i].addWidget(self.param_lists[i])
-            self.h_box_lists[i].addWidget(self.param_lbl_lists[i])
+            h_box_lists[i].addWidget(self.param_lbl_lists[i])
+            h_box_lists[i].addWidget(self.param_lists[i])
 
         #label and radio button for parameter 8
-        self.h_box_lists.append(QTW.QHBoxLayout())
-        self.h_box_lists[8].addWidget(self.yes_rd_btn)
-        self.h_box_lists[8].addWidget(self.no_rd_btn)
-        self.h_box_lists[8].addWidget(self.param_lbl_lists[8])
+        h_box_lists.append(QTW.QHBoxLayout())
+        h_box_lists[8].addWidget(self.yes_rd_btn)
+        h_box_lists[8].addWidget(self.no_rd_btn)
+        h_box_lists[8].addWidget(self.param_lbl_lists[8])
 
         #vertical_box
-        self.v_box = QTW.QVBoxLayout()
+        v_box = QTW.QVBoxLayout()
         for i in range(self.n_param): #adding the horizontal boxes
-            self.v_box.addLayout(self.h_box_lists[i])
-        self.v_box.addLayout(self.h_box_lists[8])
-        self.v_box.addWidget(self.confirm_btn)
+            v_box.addLayout(h_box_lists[i])
+        v_box.addLayout(h_box_lists[8])
+        v_box.addWidget(self.confirm_btn)
 
         #when user clicks the confirm_btn, this two events will be triggered
         self.confirm_btn.clicked.connect(self.write_txt)
         self.confirm_btn.clicked.connect(self.n_cge_wdgt_clicked.emit) #change current widget
 
-        self.setLayout(self.v_box)
+        self.setLayout(v_box)
 
     def write_txt(self):
         ''' This method will be called  when the confirm button is pressed, modifying the parameters .txt file'''
@@ -217,20 +220,21 @@ class Network(QTW.QWidget):
         #label and texts ----------------------------------------------------------------------
         self.n_label_1 = QTW.QLabel('Write how many layers')
         self.layer_n_t = QTW.QTextEdit('')
+        #self.layer_n_t.setMaximumHeight(50)
 
         #box layouts --------------------------------------------------------------------------
-        self.v_box = QTW.QVBoxLayout()
-        self.h_box = QTW.QHBoxLayout()
+        v_box = QTW.QVBoxLayout()
+        h_box = QTW.QHBoxLayout()
 
         #setting layout-----------------------------------------------------------------------
-        self.v_box.addWidget(self.n_label_1)
-        self.v_box.addWidget(self.layer_n_t)
-        self.h_box.addWidget(self.back_btn)
-        self.h_box.addWidget(self.edit_btn)
-        self.h_box.addWidget(self.next_btn)
-        self.v_box.addLayout(self.h_box)
+        v_box.addWidget(self.n_label_1)
+        v_box.addWidget(self.layer_n_t)
+        h_box.addWidget(self.back_btn)
+        h_box.addWidget(self.edit_btn)
+        h_box.addWidget(self.next_btn)
+        v_box.addLayout(h_box)
 
-        self.setLayout(self.v_box)
+        self.setLayout(v_box)
 
         #setting button signals ----------------------------------------------------------
         self.back_btn.clicked.connect(self.b_cge_wdgt_clicked.emit) #send signal to go back
@@ -251,24 +255,24 @@ class Network_1(QTW.QWidget):
     def init_ui(self):
         self.ok_btn = QTW.QPushButton('Ok')
 
-        self.v_box = QTW.QVBoxLayout()
+        v_box = QTW.QVBoxLayout()
 
         #gerando widgets dependendo do tamanho do layer_n
-        self.h_box_lists = [QTW.QHBoxLayout() for i in range(self.layer_n)]
+        h_box_lists = [QTW.QHBoxLayout() for i in range(self.layer_n)]
         self.label_lists = [QTW.QLabel('Layer :' + str(i)) for i in range(self.layer_n)]
         self.text_lists = [QTW.QTextEdit() for i in range(self.layer_n)]
 
         #setting the widgets created
         for i in range(self.layer_n):
-            self.h_box_lists[i].addWidget(self.label_lists[i])
-            self.h_box_lists[i].addWidget(self.text_lists[i])
-            self.v_box.addLayout(self.h_box_lists[i])
+            h_box_lists[i].addWidget(self.label_lists[i])
+            h_box_lists[i].addWidget(self.text_lists[i])
+            v_box.addLayout(h_box_lists[i])
 
         #adding ok_btn
-        self.v_box.addWidget(self.ok_btn)
+        v_box.addWidget(self.ok_btn)
         self.ok_btn.clicked.connect(self.ok_pressed)
 
-        self.setLayout(self.v_box)
+        self.setLayout(v_box)
         self.show()  # show layout
 
     def ok_pressed(self):
@@ -280,8 +284,8 @@ class Network_1(QTW.QWidget):
         self.txt_name = 'network.txt'
 
         #cleaning the file
-        self.file_clean = open(self.txt_name, "w")
-        self.file_clean.close()
+        file_clean = open(self.txt_name, "w")
+        file_clean.close()
 
         # create an array of str values from text_lists
         for i in range(self.layer_n):
@@ -310,6 +314,8 @@ class ImportWidget(QTW.QWidget):
         #back_btn to set the param widget again
         self.back_btn = QTW.QPushButton('Back')
         self.back_btn.clicked.connect(self.b_cge_wdgt_clicked.emit)
+        self.opn_dir_btn = QTW.QPushButton('Open_dir')
+        self.opn_dir_btn.clicked.connect(self.open_directory)
 
         #run the .py using Process class
         self.start_process = QTW.QPushButton('Start')
@@ -318,16 +324,23 @@ class ImportWidget(QTW.QWidget):
         #Where print from .py is going to be printed
         self.prompt_copy = QTW.QTextEdit()
 
-        self.v_box = QTW.QVBoxLayout()
-        self.v_box.addWidget(self.back_btn)
-        self.v_box.addWidget(self.start_process)
-        self.v_box.addWidget(self.prompt_copy)
-        self.setLayout(self.v_box)
+        v_box = QTW.QVBoxLayout()
+        v_box.addWidget(self.back_btn)
+        v_box.addWidget(self.opn_dir_btn)
+        v_box.addWidget(self.start_process)
+        v_box.addWidget(self.prompt_copy)
+        self.setLayout(v_box)
 
     def do_something(self):
         '''It just instantiate and run the Process Class'''
         process = Process(self.qmainwindow, self.prompt_copy)
         process.begin_process()
+
+    def open_directory(self):
+        directory_path = '.'
+        os.system('nautilus' +' '+ directory_path )
+
+
 
 
 
@@ -351,8 +364,15 @@ class Process():
         self.process.started.connect(lambda: print('Started!'))
         self.process.finished.connect(lambda: print('Finished!'))
 
-        print('Starting process', flush = true)
-        self.process.start('python', ['InvertedPendulum.py']) #starting the process
+        print('Starting process', flush = True)
+        self.process.start('python', ['process_test.py']) #starting the process
+
+        #updating the image
+        self.img = Image_plot()
+        self.th = Th(self.img)
+        self.th.start()
+        self.process.finished.connect(self.th.raise_exception)
+
 
     def append(self, text):
         '''Append in the end'''
@@ -376,21 +396,44 @@ class Process():
         self.qtextedit.append(text)
 
 class Image_plot(QTW.QWidget): #--------------------------------------------------------------------------------
-    def __init__(self, layer_n):
+    def __init__(self):
         super().__init__()
+        self.img_name = 'process_test_fig.png'
         self.init_ui()
 
     def init_ui(self):
-        self.img = qtw.QLabel()
-        #self.img.setPixmap(QtGui.QPixmap('cat.jpeg'))
+        self.img = QTW.QLabel()
+        self.img.setPixmap(QTG.QPixmap(self.img_name))
+        v_box = QTW.QVBoxLayout()
+        v_box.addWidget(self.img)
 
-
+        self.setLayout(v_box)
         self.show()  # show layout
 
-#-------------------------------------------------------------------------
 
+    def update_image(self):
+        self.img.setPixmap(QTG.QPixmap(self.img_name))
+
+class Th(Thread):
+    def __init__ (self, img):
+        Thread.__init__(self)
+        self.img = img
+        self.flag = True
+
+    def run(self):
+        while self.flag:
+            try:
+                self.img.update_image()
+                sleep(1)
+            except:
+                break
+
+
+    def raise_exception(self):
+        self.flag = False
 
 app = QTW.QApplication(sys.argv)
 main_window = FirstWindow()
+#main_window = Process()
 main_window.show()
 sys.exit(app.exec_())
