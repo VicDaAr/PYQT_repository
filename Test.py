@@ -35,11 +35,12 @@ class FirstWindowWidget(QTW.QWidget):
         #setting 3 buttons to chose from -------------------------------------
         self.numeric_model_btn = QTW.QPushButton('Numeric Model')
         self.simulation_btn = QTW.QPushButton('Simulation')
-        self.real_btn = QTW.QPushButton('Real')
+        #self.real_btn = QTW.QPushButton('Real')
 
         #layout for buttoms -------------------------------------------------
         v_box = QTW.QVBoxLayout()
         v_box.addWidget(self.numeric_model_btn)
+        v_box.addWidget(self.simulation_btn)
 
         #trigger when the user click numeric_model_btn --------------------------------
         self.numeric_model_btn.clicked.connect(self.numeric_model_open)  #runs the method
@@ -67,23 +68,23 @@ class NumericModel(QTW.QMainWindow):
         self.setCentralWidget(self.central_widget)
 
         self.param_widget = ParamWidget() #widget to receive parameters
-        self.net_widget = Network()  # widget to set neural layers
+        #self.net_widget = Network()  # widget to set neural layers
         self.import_widget = ImportWidget(self) #widget to import and run another .py program
         #Self is needed as a parameter because the QMainWindow will be inherited to run .py program
 
         #adding both widgets and setting current widget
         self.central_widget.addWidget(self.param_widget)
-        self.central_widget.addWidget(self.net_widget)
+        #self.central_widget.addWidget(self.net_widget)
         self.central_widget.addWidget(self.import_widget)
         self.central_widget.setCurrentWidget(self.param_widget)
 
         #signals to change widgets for NEXT widget, look for .emit
-        self.param_widget.n_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.net_widget))
-        self.net_widget.n_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.import_widget))
+        self.param_widget.n_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.import_widget))
+        #self.net_widget.n_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.import_widget))
 
         #signals to change widgets for BACK widget, look for .emit
-        self.net_widget.b_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.param_widget))
-        self.import_widget.b_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.net_widget))
+        #self.net_widget.b_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.param_widget))
+        self.import_widget.b_cge_wdgt_clicked.connect(lambda: self.central_widget.setCurrentWidget(self.param_widget))
 
         self.show()
 
@@ -105,6 +106,10 @@ class ParamWidget(QTW.QWidget):
         self.param_lists = [QTW.QTextEdit() for i in range(self.n_param)]
         self.param_lbl_lists = [QTW.QLabel() for i in range(self.n_param)]
 
+        #setting max height
+        for i in range(self.n_param):
+            self.param_lists[i].setMaximumSize(200,25) #width, height
+
         #label of params
         self.param_lbl_lists[0] = QTW.QLabel('Nome da simulacao')
         self.param_lbl_lists[1] = QTW.QLabel('Numero de episodios')
@@ -121,13 +126,14 @@ class ParamWidget(QTW.QWidget):
         self.yes_rd_btn = QTW.QRadioButton('sim')
         self.no_rd_btn = QTW.QRadioButton('nao')
 
-        self.confirm_btn = QTW.QPushButton('Confirm')
+        self.confirm_btn = QTW.QPushButton('Confirmar')
+        self.editN_btn = QTW.QPushButton('Editar Neural Layers')
 
         #values that are already written in the .txt file
         with open('parametros.txt', 'r') as r:
             self.param_lines = r.readlines()
 
-        #write
+        #write each textEdit
         for i in range (self.n_param):
             self.param_lists[i].setText(self.param_lines[i].strip())
 
@@ -147,20 +153,24 @@ class ParamWidget(QTW.QWidget):
 
         #label and radio button for parameter 8
         h_box_lists.append(QTW.QHBoxLayout())
+        h_box_lists[8].addWidget(self.param_lbl_lists[8])
         h_box_lists[8].addWidget(self.yes_rd_btn)
         h_box_lists[8].addWidget(self.no_rd_btn)
-        h_box_lists[8].addWidget(self.param_lbl_lists[8])
+
 
         #vertical_box
         v_box = QTW.QVBoxLayout()
         for i in range(self.n_param): #adding the horizontal boxes
             v_box.addLayout(h_box_lists[i])
         v_box.addLayout(h_box_lists[8])
+        v_box.addWidget(self.editN_btn)
         v_box.addWidget(self.confirm_btn)
 
         #when user clicks the confirm_btn, this two events will be triggered
         self.confirm_btn.clicked.connect(self.write_txt)
         self.confirm_btn.clicked.connect(self.n_cge_wdgt_clicked.emit) #change current widget
+
+        self.editN_btn.clicked.connect(self.open_Net)
 
         self.setLayout(v_box)
 
@@ -189,6 +199,9 @@ class ParamWidget(QTW.QWidget):
                 a.write(self.param_txt_lists[i] + '\n')
             a.write(self.rd_btn_check)
 
+    def open_Net(self): #open Network Widget
+        self.w = Network()
+
     def clear_Layout(self, layout):
         '''You can clear layout with it, but i didn't use'''
         if layout is not None:
@@ -202,44 +215,62 @@ class ParamWidget(QTW.QWidget):
 
 class Network(QTW.QWidget):
     '''widget to open another widget with the number of layouts'''
-    n_cge_wdgt_clicked = QTC.pyqtSignal()
-    b_cge_wdgt_clicked = QTC.pyqtSignal()
 
     def __init__(self):
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle('ImportWidget')
+        self.setWindowTitle('Neural Network')
 
         #buttons ----------------------------------------------------------------------------
-        self.back_btn = QTW.QPushButton('Back') # back_btn to go to the param widget again
+        #self.back_btn = QTW.QPushButton('Back') # back_btn to go to the param widget again
         self.edit_btn = QTW.QPushButton('Edit') #open Network_1
-        self.next_btn = QTW.QPushButton('Next') #nexr_btn to go to the import widget
+        #self.next_btn = QTW.QPushButton('Next') #nexr_btn to go to the import widget
 
         #label and texts ----------------------------------------------------------------------
-        self.n_label_1 = QTW.QLabel('Write how many layers')
+        self.n_label_1 = QTW.QLabel()
+        self.n_label_2 = QTW.QLabel()
+        self.n_label_3 = QTW.QLabel()
+        self.n_label_4 = QTW.QLabel('Escreva quantas layers')
         self.layer_n_t = QTW.QTextEdit('')
-        #self.layer_n_t.setMaximumHeight(50)
+        self.layer_n_t.setMaximumHeight(25)
 
         #box layouts --------------------------------------------------------------------------
         v_box = QTW.QVBoxLayout()
         h_box = QTW.QHBoxLayout()
 
+        # values that are already written in the .txt file
+        with open('network.txt', 'r') as r:
+            network_lines = r.readlines()
+
+            txt_network_lines = ''
+        for i in range(1, len(network_lines)):
+            txt_network_lines += network_lines[i].strip() + ' '
+
+        self.n_label_1.setText('número de layers: ' + network_lines[0].strip())
+        self.n_label_2.setText('número de neurônios em cada layer:')
+        self.n_label_3.setText(txt_network_lines)
+
         #setting layout-----------------------------------------------------------------------
         v_box.addWidget(self.n_label_1)
+        v_box.addWidget(self.n_label_2)
+        v_box.addWidget(self.n_label_3)
+        v_box.addWidget(self.n_label_4)
         v_box.addWidget(self.layer_n_t)
-        h_box.addWidget(self.back_btn)
+        #h_box.addWidget(self.back_btn)
         h_box.addWidget(self.edit_btn)
-        h_box.addWidget(self.next_btn)
+        #h_box.addWidget(self.next_btn)
         v_box.addLayout(h_box)
 
         self.setLayout(v_box)
 
         #setting button signals ----------------------------------------------------------
-        self.back_btn.clicked.connect(self.b_cge_wdgt_clicked.emit) #send signal to go back
+        #self.back_btn.clicked.connect(self.b_cge_wdgt_clicked.emit) #send signal to go back
         self.edit_btn.clicked.connect(self.open_network_1)
-        self.next_btn.clicked.connect(self.n_cge_wdgt_clicked.emit) #send signal to go next
+        #self.next_btn.clicked.connect(self.n_cge_wdgt_clicked.emit) #send signal to go next
+
+        self.show()
 
     def open_network_1(self):
         layer_n = int(self.layer_n_t.toPlainText().strip()) #number of layers
@@ -259,11 +290,12 @@ class Network_1(QTW.QWidget):
 
         #gerando widgets dependendo do tamanho do layer_n
         h_box_lists = [QTW.QHBoxLayout() for i in range(self.layer_n)]
-        self.label_lists = [QTW.QLabel('Layer :' + str(i)) for i in range(self.layer_n)]
+        self.label_lists = [QTW.QLabel('Neuronios na Layer' + str(i) + ':') for i in range(self.layer_n)]
         self.text_lists = [QTW.QTextEdit() for i in range(self.layer_n)]
 
         #setting the widgets created
         for i in range(self.layer_n):
+            self.text_lists[i].setMaximumSize(100,25) #width, height
             h_box_lists[i].addWidget(self.label_lists[i])
             h_box_lists[i].addWidget(self.text_lists[i])
             v_box.addLayout(h_box_lists[i])
@@ -317,6 +349,7 @@ class ImportWidget(QTW.QWidget):
         self.opn_dir_btn = QTW.QPushButton('Open_dir')
         self.opn_dir_btn.clicked.connect(self.open_directory)
 
+
         #run the .py using Process class
         self.start_process = QTW.QPushButton('Start')
         self.start_process.clicked.connect(self.do_something)
@@ -333,8 +366,8 @@ class ImportWidget(QTW.QWidget):
 
     def do_something(self):
         '''It just instantiate and run the Process Class'''
-        process = Process(self.qmainwindow, self.prompt_copy)
-        process.begin_process()
+        self.process = Process(self.qmainwindow, self.prompt_copy)
+        self.process.begin_process()
 
     def open_directory(self):
         directory_path = '.'
@@ -351,6 +384,8 @@ class Process():
         self.qtextedit = qtextedit #where it is going to be printed
 
     def begin_process(self):
+        process_name = 'InvertedPendulum.py'
+
         print('Connecting Process')
         self.process = QTC.QProcess(self.qmainwindow)
 
@@ -361,17 +396,19 @@ class Process():
         #self.process.readyReadStandardError.connect(lambda: self.stderrReady())
 
         #signals to signal begin and end
-        self.process.started.connect(lambda: print('Started!'))
-        self.process.finished.connect(lambda: print('Finished!'))
+        self.process.started.connect(lambda: print('Started!', flush= True))
+        self.process.finished.connect(lambda: print('Finished!', flush= True))
 
         print('Starting process', flush = True)
-        self.process.start('python', ['process_test.py']) #starting the process
+        self.process.start('python', [process_name]) #starting the process
 
         #updating the image
         self.img = Image_plot()
         self.th = Th(self.img)
         self.th.start()
-        self.process.finished.connect(self.th.raise_exception)
+
+        self.process.finished.connect(self.th.raise_exception) #terminate the Thread that uploads image
+
 
 
     def append(self, text):
@@ -398,7 +435,7 @@ class Process():
 class Image_plot(QTW.QWidget): #--------------------------------------------------------------------------------
     def __init__(self):
         super().__init__()
-        self.img_name = 'process_test_fig.png'
+        self.img_name = 'Reward.png'
         self.init_ui()
 
     def init_ui(self):
@@ -424,8 +461,9 @@ class Th(Thread):
         while self.flag:
             try:
                 self.img.update_image()
-                sleep(1)
+                sleep(0.1)
             except:
+                print('img not found')
                 break
 
 
